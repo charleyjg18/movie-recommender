@@ -1,0 +1,481 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Advanced Movie Recommendation System</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.1.3/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        .container { max-width: 900px; margin-top: 30px; }
+        .card {
+            border: none;
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            backdrop-filter: blur(10px);
+            background: rgba(255,255,255,0.95);
+        }
+        .card-header {
+            background: linear-gradient(135deg, #ff6b6b, #feca57);
+            color: white;
+            border-radius: 20px 20px 0 0 !important;
+            text-align: center;
+            padding: 2rem;
+        }
+        .method-selector {
+            background-color: #f8f9fa;
+            border-radius: 15px;
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+        }
+        .method-card {
+            border: 2px solid #e9ecef;
+            border-radius: 15px;
+            padding: 1rem;
+            margin-bottom: 1rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        .method-card:hover {
+            border-color: #667eea;
+            background-color: rgba(102, 126, 234, 0.1);
+        }
+        .method-card.active {
+            border-color: #667eea;
+            background-color: rgba(102, 126, 234, 0.2);
+        }
+        .method-card.disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            background-color: #f8f9fa;
+        }
+        .form-control {
+            border-radius: 15px;
+            padding: 15px 20px;
+            border: 2px solid #e9ecef;
+            transition: all 0.3s ease;
+            font-size: 1.1rem;
+        }
+        .form-control:focus {
+            border-color: #667eea;
+            box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
+        }
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            border: none;
+            padding: 15px 40px;
+            border-radius: 15px;
+            font-size: 1.2rem;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(102, 126, 234, 0.4);
+        }
+        .alert {
+            border-radius: 15px;
+            padding: 1rem 1.5rem;
+            border: none;
+        }
+        .alert-danger {
+            background: linear-gradient(135deg, #ff6b6b, #ee5a24);
+            color: white;
+        }
+        .movie-search { position: relative; }
+        .movie-suggestions {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            background: white;
+            border: 1px solid #e9ecef;
+            border-radius: 0 0 15px 15px;
+            max-height: 200px;
+            overflow-y: auto;
+            z-index: 1000;
+            display: none;
+        }
+        .suggestion-item {
+            padding: 10px 20px;
+            cursor: pointer;
+            border-bottom: 1px solid #f8f9fa;
+            transition: background-color 0.2s;
+        }
+        .suggestion-item:hover { background-color: #f8f9fa; }
+        .feature-badge {
+            display: inline-block;
+            padding: 0.25rem 0.5rem;
+            font-size: 0.75rem;
+            border-radius: 10px;
+            margin-left: 0.5rem;
+        }
+        .badge-new { background-color: #ff6b6b; color: white; }
+        .badge-advanced { background-color: #74b9ff; color: white; }
+        .conditional-field {
+            display: none;
+            margin-top: 1rem;
+        }
+        .conditional-field.show {
+            display: block;
+            animation: fadeIn 0.3s ease-in-out;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .form-check {
+            background: rgba(255,255,255,0.8);
+            border-radius: 10px;
+            padding: 0.75rem;
+            margin-bottom: 0.5rem;
+            transition: all 0.3s ease;
+        }
+        .form-check:hover {
+            background: rgba(102, 126, 234, 0.1);
+        }
+        .form-check-input:checked + .form-check-label {
+            color: #667eea;
+            font-weight: 600;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="card">
+            <div class="card-header">
+                <i class="fas fa-robot fa-2x mb-3"></i>
+                <h1>Advanced Movie Recommendation System</h1>
+                <p>Choose your recommendation method and discover amazing movies!</p>
+            </div>
+            <div class="card-body p-5">
+                {% if error %}
+                <div class="alert alert-danger" role="alert">
+                    <i class="fas fa-exclamation-triangle me-2"></i>
+                    {{ error }}
+                </div>
+                {% endif %}
+                
+                <!-- Method Selection -->
+                <div class="method-selector">
+                    <h5 class="mb-3"><i class="fas fa-cogs me-2"></i>Select Recommendation Method</h5>
+                    
+                    <div class="row">
+                        <div class="col-md-4">
+                            <div class="method-card {% if not available_methods.content_based %}disabled{% endif %}" 
+                                 data-method="content_based" id="method-content">
+                                <div class="text-center">
+                                    <i class="fas fa-book fa-2x text-primary mb-2"></i>
+                                    <h6>Content-Based</h6>
+                                    <small class="text-muted">Find movies similar to one you like</small>
+                                    {% if available_methods.content_based %}
+                                        <span class="feature-badge badge-new">Classic</span>
+                                    {% else %}
+                                        <span class="feature-badge" style="background-color: #6c757d; color: white;">Unavailable</span>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-4">
+                            <div class="method-card {% if not available_methods.collaborative %}disabled{% endif %}" 
+                                 data-method="collaborative" id="method-collab">
+                                <div class="text-center">
+                                    <i class="fas fa-users fa-2x text-success mb-2"></i>
+                                    <h6>Collaborative Filtering</h6>
+                                    <small class="text-muted">Based on similar users' preferences</small>
+                                    {% if available_methods.collaborative %}
+                                        <span class="feature-badge badge-advanced">Advanced</span>
+                                    {% else %}
+                                        <span class="feature-badge" style="background-color: #6c757d; color: white;">Unavailable</span>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-4">
+                            <div class="method-card {% if not available_methods.hybrid %}disabled{% endif %}" 
+                                 data-method="hybrid" id="method-hybrid">
+                                <div class="text-center">
+                                    <i class="fas fa-magic fa-2x text-warning mb-2"></i>
+                                    <h6>Hybrid System</h6>
+                                    <small class="text-muted">Best of both worlds combined</small>
+                                    {% if available_methods.hybrid %}
+                                        <span class="feature-badge badge-new">Premium</span>
+                                    {% else %}
+                                        <span class="feature-badge" style="background-color: #6c757d; color: white;">Unavailable</span>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <form method="POST" action="/recommend" id="recommendForm">
+                    <input type="hidden" name="method" id="selectedMethod" value="content_based">
+                    
+                    <!-- Movie Selection (for content-based and hybrid) -->
+                    <div class="mb-4" id="movie-field">
+                        <label for="movie" class="form-label h5">
+                            <i class="fas fa-search me-2"></i>Select a Movie
+                        </label>
+                        <div class="movie-search">
+                            <input type="text" 
+                                   class="form-control" 
+                                   id="movie" 
+                                   name="movie" 
+                                   placeholder="Start typing a movie name..." 
+                                   autocomplete="off">
+                            <div class="movie-suggestions" id="suggestions"></div>
+                        </div>
+                        <small class="form-text text-muted mt-2">
+                            <i class="fas fa-info-circle me-1"></i>
+                            Search from our database of {{ movie_list|length if movie_list else 0 }} movies
+                        </small>
+                    </div>
+                    
+                    <!-- User ID (for collaborative and hybrid) -->
+                    <div class="conditional-field" id="user-field">
+                        <label for="user_id" class="form-label h5">
+                            <i class="fas fa-user me-2"></i>User ID
+                        </label>
+                        <input type="number" 
+                               class="form-control" 
+                               id="user_id" 
+                               name="user_id" 
+                               placeholder="Enter user ID ({{ min_user_id }}-{{ max_user_id }})" 
+                               min="{{ min_user_id }}" 
+                               max="{{ max_user_id }}">
+                        <small class="form-text text-muted mt-2">
+                            <i class="fas fa-info-circle me-1"></i>
+                            Enter a user ID between {{ min_user_id }}-{{ max_user_id }} for personalized recommendations
+                        </small>
+                    </div>
+                    
+                    <!-- Collaborative Method Selection -->
+                    <div class="conditional-field" id="collab-method-field">
+                        <label class="form-label h6">
+                            <i class="fas fa-cog me-2"></i>Collaborative Method
+                        </label>
+                        <div class="row">
+                            <div class="col-md-4">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" name="collab_method" 
+                                           id="user_based" value="user_based" checked>
+                                    <label class="form-check-label" for="user_based">
+                                        <strong>User-Based</strong><br>
+                                        <small class="text-muted">Find similar users</small>
+                                    </label>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" name="collab_method" 
+                                           id="item_based" value="item_based">
+                                    <label class="form-check-label" for="item_based">
+                                        <strong>Item-Based</strong><br>
+                                        <small class="text-muted">Find similar movies</small>
+                                    </label>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" name="collab_method" 
+                                           id="svd" value="svd">
+                                    <label class="form-check-label" for="svd">
+                                        <strong>Matrix Factorization</strong><br>
+                                        <small class="text-muted">Advanced SVD</small>
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="text-center mt-4">
+                        <button type="submit" class="btn btn-primary btn-lg" id="submitBtn">
+                            <i class="fas fa-magic me-2"></i>Get Recommendations
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+        
+        <!-- Features Overview -->
+        <div class="card mt-4" style="background: rgba(255,255,255,0.9);">
+            <div class="card-body p-4">
+                <div class="row text-center">
+                    <div class="col-md-4">
+                        <i class="fas fa-brain fa-2x text-primary mb-2"></i>
+                        <h6>AI-Powered</h6>
+                        <small>Advanced machine learning algorithms analyze movie features and user preferences</small>
+                    </div>
+                    <div class="col-md-4">
+                        <i class="fas fa-lightning-bolt fa-2x text-warning mb-2"></i>
+                        <h6>Multiple Methods</h6>
+                        <small>Content-based, collaborative filtering, and hybrid recommendation approaches</small>
+                    </div>
+                    <div class="col-md-4">
+                        <i class="fas fa-chart-line fa-2x text-success mb-2"></i>
+                        <h6>Personalized</h6>
+                        <small>Tailored recommendations based on your preferences and similar users</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="text-center text-white mt-4">
+            <p><i class="fas fa-code me-2"></i>Built with Flask, Python & Advanced Machine Learning</p>
+            <p><small>Featuring Content-Based Filtering, Collaborative Filtering & Hybrid Systems</small></p>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.1.3/js/bootstrap.bundle.min.js"></script>
+    <script>
+        const movieInput = document.getElementById('movie');
+        const userInput = document.getElementById('user_id');
+        const suggestionsDiv = document.getElementById('suggestions');
+        const movieField = document.getElementById('movie-field');
+        const userField = document.getElementById('user-field');
+        const submitBtn = document.getElementById('submitBtn');
+        
+        let movieList = {{ movie_list|tojson if movie_list else [] }};
+        let selectedMethod = 'content_based';
+        
+        // Method selection handling
+        document.querySelectorAll('.method-card').forEach(card => {
+            if (!card.classList.contains('disabled')) {
+                card.addEventListener('click', function() {
+                    // Remove active class from all cards
+                    document.querySelectorAll('.method-card').forEach(c => c.classList.remove('active'));
+                    
+                    // Add active class to clicked card
+                    this.classList.add('active');
+                    
+                    // Update selected method
+                    selectedMethod = this.dataset.method;
+                    document.getElementById('selectedMethod').value = selectedMethod;
+                    
+                    // Show/hide fields based on method
+                    updateFieldVisibility();
+                    updateSubmitButton();
+                });
+            }
+        });
+        
+        function updateFieldVisibility() {
+            // Reset fields
+            movieField.style.display = 'block';
+            userField.classList.remove('show');
+            document.getElementById('collab-method-field').classList.remove('show');
+            
+            // Clear required attributes
+            movieInput.removeAttribute('required');
+            userInput.removeAttribute('required');
+            
+            switch(selectedMethod) {
+                case 'content_based':
+                    movieInput.setAttribute('required', 'required');
+                    break;
+                    
+                case 'collaborative':
+                    movieField.style.display = 'none';
+                    userField.classList.add('show');
+                    document.getElementById('collab-method-field').classList.add('show');
+                    userInput.setAttribute('required', 'required');
+                    break;
+                    
+                case 'hybrid':
+                    userField.classList.add('show');
+                    document.getElementById('collab-method-field').classList.add('show');
+                    // Neither field is required for hybrid (can use either or both)
+                    break;
+            }
+        }
+        
+        function updateSubmitButton() {
+            const methodLabels = {
+                'content_based': 'Get Content-Based Recommendations',
+                'collaborative': 'Get Collaborative Recommendations', 
+                'hybrid': 'Get Hybrid Recommendations'
+            };
+            
+            const icons = {
+                'content_based': 'fas fa-book',
+                'collaborative': 'fas fa-users',
+                'hybrid': 'fas fa-magic'
+            };
+            
+            submitBtn.innerHTML = `<i class="${icons[selectedMethod]} me-2"></i>${methodLabels[selectedMethod]}`;
+        }
+        
+        // Initialize with content-based selected
+        document.getElementById('method-content').classList.add('active');
+        updateFieldVisibility();
+        updateSubmitButton();
+        
+        // Movie search functionality
+        movieInput.addEventListener('input', function() {
+            const query = this.value.toLowerCase().trim();
+            
+            if (query.length < 2) {
+                suggestionsDiv.style.display = 'none';
+                return;
+            }
+            
+            const filteredMovies = movieList.filter(movie => 
+                movie.toLowerCase().includes(query)
+            ).slice(0, 8);
+            
+            if (filteredMovies.length > 0) {
+                suggestionsDiv.innerHTML = filteredMovies.map(movie => 
+                    '<div class="suggestion-item" onclick="selectMovie(\'' + movie.replace(/'/g, "\\\\'") + '\')">' + movie + '</div>'
+                ).join('');
+                suggestionsDiv.style.display = 'block';
+            } else {
+                suggestionsDiv.style.display = 'none';
+            }
+        });
+        
+        function selectMovie(movie) {
+            movieInput.value = movie;
+            suggestionsDiv.style.display = 'none';
+        }
+        
+        document.addEventListener('click', function(e) {
+            if (!e.target.closest('.movie-search')) {
+                suggestionsDiv.style.display = 'none';
+            }
+        });
+        
+        // Form validation
+        document.getElementById('recommendForm').addEventListener('submit', function(e) {
+            if (selectedMethod === 'collaborative' && !userInput.value) {
+                e.preventDefault();
+                alert('Please enter a user ID for collaborative filtering.');
+                return;
+            }
+            
+            if (selectedMethod === 'content_based' && !movieInput.value) {
+                e.preventDefault();
+                alert('Please select a movie for content-based recommendations.');
+                return;
+            }
+            
+            if (selectedMethod === 'hybrid' && !movieInput.value && !userInput.value) {
+                e.preventDefault();
+                alert('Please provide either a movie title or user ID (or both) for hybrid recommendations.');
+                return;
+            }
+            
+            // Show loading state
+            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Generating Recommendations...';
+            submitBtn.disabled = true;
+        });
+    </script>
+</body>
+</html>

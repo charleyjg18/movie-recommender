@@ -1,0 +1,420 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Movie Recommendations</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.1.3/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        .container { max-width: 1200px; margin-top: 30px; padding-bottom: 50px; }
+        .header-card {
+            border: none;
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            backdrop-filter: blur(10px);
+            background: rgba(255,255,255,0.95);
+            margin-bottom: 2rem;
+        }
+        .header-content {
+            background: linear-gradient(135deg, #ff6b6b, #feca57);
+            color: white;
+            border-radius: 20px 20px 0 0;
+            text-align: center;
+            padding: 2rem;
+        }
+        .method-badge {
+            display: inline-block;
+            padding: 0.5rem 1rem;
+            border-radius: 25px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            margin-top: 0.5rem;
+        }
+        .method-content { background: linear-gradient(135deg, #667eea, #764ba2); color: white; }
+        .method-collaborative { background: linear-gradient(135deg, #74b9ff, #0984e3); color: white; }
+        .method-hybrid { background: linear-gradient(135deg, #fd79a8, #e84393); color: white; }
+        
+        .movie-card {
+            border: none;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            backdrop-filter: blur(10px);
+            background: rgba(255,255,255,0.95);
+            transition: all 0.3s ease;
+            height: 100%;
+            overflow: hidden;
+            min-height: 500px;
+        }
+        .movie-card:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 20px 40px rgba(0,0,0,0.2);
+        }
+        .movie-poster {
+            width: 100%;
+            height: 350px;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            border-radius: 15px 15px 0 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 1.2rem;
+            font-weight: 600;
+            text-align: center;
+            padding: 20px;
+            position: relative;
+        }
+        .movie-poster img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            border-radius: 15px 15px 0 0;
+            position: absolute;
+            top: 0;
+            left: 0;
+        }
+        .movie-poster .placeholder-text {
+            z-index: 2;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+        }
+        .movie-info { 
+            padding: 1.5rem; 
+            text-align: center;
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+        .movie-title {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: #333;
+            margin: 0 0 1rem 0;
+            line-height: 1.3;
+            min-height: 2.6rem;
+        }
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            border: none;
+            padding: 12px 30px;
+            border-radius: 25px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: inline-block;
+        }
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(102, 126, 234, 0.4);
+            color: white;
+            text-decoration: none;
+        }
+        .btn-secondary {
+            background: linear-gradient(135deg, #74b9ff, #0984e3);
+            border: none;
+            padding: 10px 25px;
+            border-radius: 20px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            color: white;
+        }
+        .btn-secondary:hover {
+            background: linear-gradient(135deg, #0984e3, #74b9ff);
+            color: white;
+            transform: translateY(-2px);
+        }
+        .recommendation-number {
+            position: absolute;
+            top: 15px;
+            left: 15px;
+            background: linear-gradient(135deg, #ff6b6b, #feca57);
+            color: white;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 1.2rem;
+            z-index: 3;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+        }
+        .movie-icon {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+            opacity: 0.7;
+        }
+        .stats-section {
+            background: rgba(255,255,255,0.9);
+            border-radius: 15px;
+            padding: 1.5rem;
+            margin: 2rem 0;
+            backdrop-filter: blur(5px);
+        }
+        .stats-item {
+            text-align: center;
+            padding: 1rem;
+        }
+        .stats-number {
+            font-size: 2rem;
+            font-weight: bold;
+            color: #667eea;
+        }
+        .stats-label {
+            color: #666;
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        .fade-in {
+            animation: fadeIn 0.5s ease-in-out;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(30px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .movie-card:nth-child(1) { animation-delay: 0.1s; }
+        .movie-card:nth-child(2) { animation-delay: 0.2s; }
+        .movie-card:nth-child(3) { animation-delay: 0.3s; }
+        .movie-card:nth-child(4) { animation-delay: 0.4s; }
+        .movie-card:nth-child(5) { animation-delay: 0.5s; }
+        
+        @media (max-width: 768px) {
+            .movie-poster { height: 300px; }
+            .movie-title { font-size: 1rem; }
+            .container { margin-top: 15px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header-card">
+            <div class="header-content">
+                <i class="fas fa-magic fa-2x mb-3"></i>
+                <h1>{{ method_description }} for {{ movie }}</h1>
+                <p class="mb-0">Found {{ total_recommendations }} personalized recommendations</p>
+                {% if method == 'collaborative' %}
+                <div class="method-badge method-collaborative">
+                    <i class="fas fa-users me-1"></i>Collaborative Filtering
+                </div>
+                <small class="d-block mt-2">Using advanced collaborative filtering algorithms</small>
+                {% elif method == 'hybrid' %}
+                <div class="method-badge method-hybrid">
+                    <i class="fas fa-magic me-1"></i>Hybrid System
+                </div>
+                <small class="d-block mt-2">Combining content-based and collaborative approaches</small>
+                {% else %}
+                <div class="method-badge method-content">
+                    <i class="fas fa-book me-1"></i>Content-Based
+                </div>
+                <small class="d-block mt-2">Based on movie content similarity analysis</small>
+                {% endif %}
+            </div>
+            <div class="p-4 text-center">
+                <a href="/" class="btn btn-primary me-3">
+                    <i class="fas fa-arrow-left me-2"></i>Try Another Movie
+                </a>
+                <button class="btn btn-secondary" onclick="shareRecommendations()">
+                    <i class="fas fa-share me-2"></i>Share Results
+                </button>
+            </div>
+        </div>
+
+        <!-- Statistics -->
+        <div class="stats-section">
+            <div class="row">
+                <div class="col-md-4 stats-item">
+                    <div class="stats-number">{{ recommendations|length }}</div>
+                    <div class="stats-label">Recommendations</div>
+                </div>
+                <div class="col-md-4 stats-item">
+                    <div class="stats-number">AI</div>
+                    <div class="stats-label">Powered</div>
+                </div>
+                <div class="col-md-4 stats-item">
+                    <div class="stats-number">5★</div>
+                    <div class="stats-label">Quality</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Recommendations Grid -->
+        {% if recommendations %}
+        <div class="row">
+            {% for movie_name, poster_url in recommendations %}
+            <div class="col-lg-2 col-md-4 col-sm-6 mb-4">
+                <div class="movie-card d-flex flex-column fade-in" style="position: relative;">
+                    <div class="recommendation-number">{{ loop.index }}</div>
+                    
+                    <div class="movie-poster">
+                        <div class="placeholder-text">
+                            <i class="fas fa-film movie-icon"></i>
+                            <div>{{ movie_name }}</div>
+                        </div>
+                    </div>
+                    
+                    <div class="movie-info">
+                        <h5 class="movie-title">{{ movie_name }}</h5>
+                        <div>
+                            <form method="POST" action="/recommend" style="display: inline;">
+                                <input type="hidden" name="movie" value="{{ movie_name }}">
+                                <input type="hidden" name="method" value="content_based">
+                                <button type="submit" class="btn btn-sm btn-secondary">
+                                    <i class="fas fa-search-plus me-1"></i>Explore This
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="text-center text-white">
+            <i class="fas fa-exclamation-triangle fa-3x mb-3"></i>
+            <h3>No recommendations found</h3>
+            <p>Try searching for a different movie or user ID.</p>
+            <a href="/" class="btn btn-primary">Go Back</a>
+        </div>
+        {% endif %}
+
+        <!-- Method Information -->
+        <div class="stats-section">
+            <div class="row">
+                <div class="col-md-6">
+                    <h5>
+                        {% if method == 'collaborative' %}
+                        <i class="fas fa-users text-success me-2"></i>How Collaborative Filtering Works
+                        {% elif method == 'hybrid' %}
+                        <i class="fas fa-magic text-warning me-2"></i>How Hybrid System Works
+                        {% else %}
+                        <i class="fas fa-book text-primary me-2"></i>How Content-Based Works
+                        {% endif %}
+                    </h5>
+                    {% if method == 'collaborative' %}
+                    <p>Collaborative filtering analyzes patterns from users with similar preferences. It uses advanced algorithms like user-based similarity, item-based similarity, and matrix factorization to predict what you might like based on what similar users enjoyed.</p>
+                    {% elif method == 'hybrid' %}
+                    <p>The hybrid system combines the best of both worlds - content-based analysis of movie features (genres, cast, plot) with collaborative filtering from user behavior patterns. This provides more accurate and diverse recommendations.</p>
+                    {% else %}
+                    <p>Content-based filtering analyzes movie characteristics like genres, cast, crew, keywords, and plot summaries. It uses machine learning to find movies with similar features to the one you selected.</p>
+                    {% endif %}
+                </div>
+                <div class="col-md-6">
+                    <h5><i class="fas fa-lightbulb text-warning me-2"></i>Tips for Better Recommendations</h5>
+                    <ul class="list-unstyled">
+                        {% if method == 'collaborative' %}
+                        <li><i class="fas fa-check text-success me-2"></i>Try different user IDs to see varied preferences</li>
+                        <li><i class="fas fa-check text-success me-2"></i>User-based finds people like you, item-based finds similar movies</li>
+                        <li><i class="fas fa-check text-success me-2"></i>SVD uses advanced matrix factorization for best results</li>
+                        {% elif method == 'hybrid' %}
+                        <li><i class="fas fa-check text-success me-2"></i>Provide both movie and user ID for best hybrid results</li>
+                        <li><i class="fas fa-check text-success me-2"></i>Hybrid combines content similarity with user preferences</li>
+                        <li><i class="fas fa-check text-success me-2"></i>Try different combinations to explore various recommendations</li>
+                        {% else %}
+                        <li><i class="fas fa-check text-success me-2"></i>Try movies from different genres to discover new types</li>
+                        <li><i class="fas fa-check text-success me-2"></i>Click "Explore This" on any recommendation for more similar movies</li>
+                        <li><i class="fas fa-check text-success me-2"></i>Content-based works great for finding similar themed movies</li>
+                        {% endif %}
+                        <li><i class="fas fa-check text-success me-2"></i>Share your results with friends using the share button</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <div class="text-center text-white mt-5">
+            <p><i class="fas fa-heart text-danger me-2"></i>Powered by Advanced Machine Learning & Flask</p>
+            <p><small>
+                {% if method == 'collaborative' %}
+                Using Collaborative Filtering with User-Based, Item-Based & SVD algorithms
+                {% elif method == 'hybrid' %}
+                Featuring Hybrid Recommendation System combining multiple AI approaches
+                {% else %}
+                Using Content-Based Filtering with Cosine Similarity & NLP
+                {% endif %}
+            </small></p>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.1.3/js/bootstrap.bundle.min.js"></script>
+    <script>
+        function shareRecommendations() {
+            const movieTitle = "{{ movie }}";
+            const method = "{{ method_description }}";
+            const recommendations = [
+                {% for movie_name, poster_url in recommendations %}
+                "{{ movie_name.replace('"', '\\"') }}"{% if not loop.last %},{% endif %}
+                {% endfor %}
+            ];
+            
+            const shareText = `🎬 ${method} for ${movieTitle}:\n\n${recommendations.map((movie, index) => `${index + 1}. ${movie}`).join('\n')}\n\nGenerated by Advanced AI Movie Recommender System! 🤖✨`;
+            
+            if (navigator.share) {
+                navigator.share({
+                    title: 'Movie Recommendations',
+                    text: shareText
+                }).catch(console.error);
+            } else {
+                navigator.clipboard.writeText(shareText).then(() => {
+                    // Show success message
+                    const originalBtn = event.target;
+                    const originalText = originalBtn.innerHTML;
+                    originalBtn.innerHTML = '<i class="fas fa-check me-2"></i>Copied!';
+                    originalBtn.classList.add('btn-success');
+                    originalBtn.classList.remove('btn-secondary');
+                    
+                    setTimeout(() => {
+                        originalBtn.innerHTML = originalText;
+                        originalBtn.classList.remove('btn-success');
+                        originalBtn.classList.add('btn-secondary');
+                    }, 2000);
+                }).catch(() => {
+                    // Fallback: show in prompt
+                    prompt('Copy this text to share:', shareText);
+                });
+            }
+        }
+        
+        // Add loading states for explore buttons
+        document.querySelectorAll('form button').forEach(btn => {
+            btn.addEventListener('click', function() {
+                this.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>Loading...';
+                this.disabled = true;
+            });
+        });
+        
+        // Add smooth entrance animations
+        document.addEventListener('DOMContentLoaded', function() {
+            const cards = document.querySelectorAll('.movie-card');
+            cards.forEach((card, index) => {
+                card.style.opacity = '0';
+                card.style.transform = 'translateY(50px)';
+                
+                setTimeout(() => {
+                    card.style.transition = 'all 0.6s ease';
+                    card.style.opacity = '1';
+                    card.style.transform = 'translateY(0)';
+                }, index * 100);
+            });
+        });
+        
+        // Add hover effects for movie cards
+        document.querySelectorAll('.movie-card').forEach(card => {
+            card.addEventListener('mouseenter', function() {
+                this.style.transform = 'translateY(-15px) scale(1.02)';
+            });
+            
+            card.addEventListener('mouseleave', function() {
+                this.style.transform = 'translateY(0) scale(1)';
+            });
+        });
+    </script>
+</body>
+</html>
