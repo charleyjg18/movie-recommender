@@ -112,7 +112,6 @@ movie-recommender/
 ├── analysis.ipynb          # Jupyter notebook for model training
 ├── app.py                  # Flask web application
 ├── requirements.txt        # Python dependencies
-├── Dockerfile             # Docker configuration
 ├── README.md              # This file
 ├── model.pkl              # Trained model (generated)
 ├── similarity.pkl         # Similarity matrix (generated)
